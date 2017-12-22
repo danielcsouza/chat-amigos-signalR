@@ -1,0 +1,101 @@
+﻿<!doctype html>
+<html>
+<head>
+    <title>Bem vindo ao Chat Amizade</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="Scripts/jquery-1.6.4.min.js"></script>
+    <script src="Scripts/jquery.signalR-2.2.2.js"></script>
+    <script src="signalr/hubs"></script>
+    <script type="text/javascript">
+        $(function () {
+
+            var nome = window.prompt("Qual seu nome?");
+            // console.log("nome digitado" + nome);
+            $('#exibenome').val(nome);
+            $(".mensagem-boas-vindas").html("Olá seja bem vindo <strong>" + nome + "</strong> ao chat de conversa" +
+                " entre amigos. As conversas aqui não são gravadas ao sair do navegador.");
+
+            $.connection.hub.url = "signalr";
+            var chat = $.connection.ChatHub;
+
+
+
+            //// Create a function that the hub can call back to display messages.
+            //chat.client.updateUsersOnlineCount = function (count) {
+            //    // Add the message to the page.
+            //    $('#usersCount').text(count);
+            //};
+
+            $.connection.hub.start();
+            chat.client.addMessage = function (name, message) {
+
+                var encodednome = $('<div />').text(name).html();
+                var encodedMsg = $('<div />').text(message).html();
+                // Adiciona a mensagem na pagina
+                $('#messages').append('<li><strong>' + encodednome
+                    + '</strong>:&nbsp;&nbsp;' + encodedMsg + '</li>');
+
+                if (name != nome) {
+
+                    if (window.Notification && Notification.permission !== "denied") {
+                        Notification.requestPermission(function (status) {  // status is "granted", if accepted by user
+                            var n = new Notification('Nova Mensagem', {
+                                body: encodedMsg,
+                                //icon: 'https://png.icons8.com/small/540//secured-letter.png' // optional
+                            });
+                        });
+                    }
+                }
+
+
+
+            };
+
+            $('#send-button').click(function () {
+                var message = $('#text-message').val();
+
+                chat.server.send(nome, message);
+                $('#text-message').val("");
+                return false;
+            });
+
+            $("#text-message").keypress(function (e) {
+                if (e.which == 13) {
+                    $('#send-button').click();
+                }
+            });
+
+
+        });
+    </script>
+</head>
+<body>
+    <div class="col-md-12">
+        <div style="margin: 0 auto;" align="center">
+            <h1>Conversa entre Amigos</h1>
+
+            <p class="mensagem-boas-vindas">
+
+            </p>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="container well" id="messages"></div>
+    </div>
+    <input type="hidden" id="exibenome" />
+
+    <nav class="navbar navbar-inverse navbar-fixed-bottom">
+        <p id="usersCount" class="text text-danger"></p>
+        <br>
+        <div class="container">
+            <div class="col-md-10">
+                <input type="text" class="form-control" placeholder="Digite uma mensagem" id="text-message" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-lg" id="send-button">Enviar</button>
+            </div>
+        </div>
+        <br>
+    </nav>
+</body>
+</html>
